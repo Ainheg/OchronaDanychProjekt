@@ -1,0 +1,57 @@
+{% extends 'main.html' %}
+{% block head %}
+    <link rel="stylesheet" href="/static/form.css"/>
+{% endblock %}
+{% block body %}
+        <div class="col-6">
+            <form action="{{url_for('add_note')}}" method="POST" class="col-4" enctype='multipart/form-data'>   
+            <ul>       
+                <li>Dodawanie notatki:</li>
+                <li>Treść notatki:</li>
+                <li><input type="text" name="note"/></li>
+                <li>
+                    <ul>
+                        <li>Typ notatki:</li>
+                        <li><input type="radio" id="pubRadio" name="type" value="public">
+                        <label for="public">Publiczna</label></li>
+                        <li><input type="radio" id="privRadio" name="type" value="private">
+                        <label for="private">Prywatna</label></li>
+                    </ul>
+                </li>
+                <li>Nazwy uzytkowników, którym udostępnić prywatną notatkę, oddziel przecinkami bez spacji</li>
+                <li><input type="text" name="usernames"/></li>
+                <li><input type="submit" value="Dodaj notatkę" /></li>
+            </ul>  
+            </form>
+            <div class="col-8">
+                <ul>
+                    <li>Notatki:</li>
+                    {% for note in notes %}
+                    <li class="note">
+                        <ul>
+                            <li>ID: {{ note['id'] }}</li>
+                            <li>Treść notatki:</li>
+                            <li>{{ note['content'] }}</li>
+                            {% if note['owner'] == current_user %}
+                            <li>
+                                <form action="{{url_for('delete_note', key = note['db_key'])}}" method="POST">
+                                    <input type="submit" value="Usuń"/>
+                                </form>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-3">
+            Konto i prywatność:
+            <form action="{{url_for('password_change')}}" method="GET">
+                <input type="submit" value="Zmień hasło"/>
+            </form>
+            <form action="{{url_for('login_history')}}" method="GET">
+                <input type="submit" value="Historia logowań"/>
+            </form>
+        </div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'main.html' %}
+{% block head %}
+    <link rel="stylesheet" href="/static/form.css"/>
+{% endblock %}
+{% block body %}
+            <ul>
+                <li>Historia logowań na konto:</li>
+                {% for item in history %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+{% endblock %}

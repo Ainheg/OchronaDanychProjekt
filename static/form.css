@@ -1,0 +1,26 @@
+ul {
+    list-style-type: none;
+    padding-left: 0px;
+}
+ul li {
+    padding: 4px 8px;
+}
+form ul {
+    list-style-type: none;
+}
+.error_hidden {
+    display: none;
+}
+.error_shown {
+    display: block;
+    font-size: 12px;
+}
+.formInputWhite {
+    background-color: white;
+}
+.formInputInitial {
+    background-color: initial;
+}
+.formInputWrong {
+    background-color: #ff7373;
+}

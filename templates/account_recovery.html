@@ -1,0 +1,24 @@
+{% extends 'main.html' %}
+{% block head %}
+    <link rel="stylesheet" href="/static/form.css"/>
+    <script src="{{url_for('static', filename='register.js')}}"></script>
+{% endblock %}
+{% block body %}
+        <form class="col-9" id="registerForm" action="{{url_for('forgot_pw_process', _external=True)}}" method="POST" enctype='multipart/form-data'>
+            <ul>
+                <li>Formularz odzyskiwania konta uzytkownika {{ username }}:</li>
+                {% for mesg in get_flashed_messages() %}
+                <li class="flashMessage">{{ mesg }}</li>
+                {% endfor %}
+                <li>Pytanie 1</li>
+                <li>{{ q1 }}</li>
+                <li><input type="text" name="a1" id="a1Field" placeholder="Odpowiedź na pytanie 1" class="formInputWhite"/></li>
+                <li>Pytanie 2</li>
+                <li>{{ q2 }}</li>
+                <li><input type="text" name="a2" id="a2Field" placeholder="Odpowiedź na pytanie 2" class="formInputWhite"/></li>
+                <li><input type="password" name="password" id="passwordField" placeholder="Hasło" class="formInputWhite"/></li>
+                <li><input type="password" name="repeatPassword" id="repeatPasswordField" placeholder="Powtórz hasło" class="formInputWhite"/></li>
+                <li><input type="submit" id="submitButton" name="submit" value="Odzyskaj konto"/></li>
+            </ul>
+        </form>
+{% endblock %}
