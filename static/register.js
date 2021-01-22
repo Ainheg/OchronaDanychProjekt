@@ -17,6 +17,7 @@ var repeatpasswordError;
 var secretquestionsError;
 var a1Error;
 var a2Error;
+var pwEntropyField;
 
 var isPasswordOk = false;
 var isPasswordMatched = false;
@@ -67,6 +68,7 @@ function createErrors(){
     usernameError = signupform.insertBefore(document.createElement("li"), usernameField.parentElement.nextElementSibling);
     emailError = signupform.insertBefore(document.createElement("li"), emailField.parentElement.nextElementSibling);
     passwordError = signupform.insertBefore(document.createElement("li"), passwordField.parentElement.nextElementSibling);
+    pwEntropyField = signupform.insertBefore(document.createElement("li"), passwordField.parentElement.nextElementSibling);
     repeatpasswordError = signupform.insertBefore(document.createElement("li"), repeatPasswordField.parentElement.nextElementSibling);
     secretquestionsError = signupform.insertBefore(document.createElement("li"), q1Field.parentElement.nextElementSibling);
     a1Error = signupform.insertBefore(document.createElement("li"), a1Field.parentElement.nextElementSibling);
@@ -74,6 +76,7 @@ function createErrors(){
 }
 
 function passwordCheck(){
+    pwEntropyCheck();
     var isPasswordLengthOk = passwordRegex.test(passwordField.value);
     if(isPasswordLengthOk) {
         var pass = passwordField.value;
@@ -152,7 +155,7 @@ function emailCheck() {
 }
 
 function qCheck(){
-    areSecretQuestionsDifferent = q1Field.value == q2Field.value;
+    areSecretQuestionsDifferent = q1Field.value != q2Field.value;
     if(areSecretQuestionsDifferent) {
         secretquestionsError.innerText = "";
         secretquestionsError.className = "error_hidden";
@@ -195,4 +198,29 @@ function validateForm(){
     } else {
         submitButton.disabled = true;
     }
+}
+
+function pwEntropyCheck(){
+    var alphabetLength = 0;
+    var pw = passwordField.value;
+    if(/[@#$%^&*(){}\[\]:"_;'<>,.\-]+/.test(pw)){
+        alphabetLength += 23;
+    }
+    if(/[A-Z]+/.test(pw)){
+        alphabetLength += 26;
+    }
+    if(/[a-z]+/.test(pw)){
+        alphabetLength += 26;
+    }
+    if(/[0-9]+/.test(pw)){
+        alphabetLength += 10;
+    }
+    var entropy
+    if(alphabetLength > 0){
+        entropy = pw.length*Math.log2(alphabetLength);
+    } else {
+        entropy = 0;
+    }
+    pwEntropyField.className = "error_shown";
+    pwEntropyField.innerText = "Entropia hasła: " + entropy.toFixed(3) + ", zalecamy wartości powyżej 70";
 }

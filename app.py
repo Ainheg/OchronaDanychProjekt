@@ -57,6 +57,7 @@ def verify_user(username, password):
     hashed = db.hget(f"ochrona:user:{username}", "password")
     if not hashed:
         return False
+    print(hashed, flush=True)
     return checkpw(password.encode(), hashed)
 
 def register_user(username, password, email, birthday, q1, a1, q2, a2):
@@ -147,7 +148,7 @@ def is_user_logged_in():
 
 def current_user_info():
     if 'username' in session:
-        return f'Jesteś zalogowany jako <a href="{url_for("index")}">{session["username"]}</a>'
+        return f'Jesteś zalogowany jako <a href="{url_for("panel")}">{session["username"]}</a>'
     return f'Nie jesteś zalogowany'
 
 def check_user_birthday(username, bday):
@@ -247,69 +248,19 @@ def sign_up():
 
 @app.route("/register", methods = ["POST"])
 def sign_up_process():
-    error = False
-    username = request.form.get("login")
-    if not username:
-        flash("Nie podano nazwy użytkownika")
-        error = True
-    elif not username_validation(username):
-        flash("Nazwa użytkownika niepoprawna")
-        error = True
-    email = request.form.get("email")
-    if not email:
-        flash("Nie podano adresu e-mail")
-        error = True
-    elif not email_validation(email):
-        flash("Adres e-mail niepoprawny")
-        error = True
-    birthday = request.form.get("date")
-    if not birthday:
-        flash("Nie podano daty urodzenia")
-        error = True
-    elif not date_validation(birthday):
-        flash("Data urodzenia niepoprawna")
-        error = True
-    q1 = request.form.get('q1')
-    if not q1:
-        flash("Nie wybrano tajnego pytania 1")
-        error = True
-    q2 = request.form.get('q2')
-    if not q2:
-        flash("Nie wybrano tajnego pytania 2")
-        error = True
-    if q1 == q2:
-        flash("Należy wybrać różne tajne pytania")
-        error = True
-    a1 = request.form.get('a1')
-    if not a1:
-        flash("Nie podano odpowiedzi do tajnego pytania 1")
-        error = True
-    elif not answer_validation(a1):
-        flash("Odpowiedź na pytanie 1 zawiera niedozwolone znaki")
-        error = True
-    a2 = request.form.get('a2')
-    if not a2:
-        flash("Nie podano odpowiedzi do tajnego pytania 2")
-        error = True
-    elif not answer_validation(a2):
-        flash("Odpowiedź na pytanie 2 zawiera niedozwolone znaki")
-        error = True
-    password = request.form.get("password")
-    if not password:
-        flash("Nie podano hasła")
-        error = True
-    elif not password_validation(password):
-        flash("Hasło nie spełnia wymagań aplikacji")
-        error = True
-    repeatPassword = request.form.get("repeatPassword")
-    if not repeatPassword:
-        flash("Nie powtórzono hasła")
-        error = True
-    if password != repeatPassword:
-        flash("Hasła się nie zgadzają")
-        error = True
-    if error:
+    if not validate_register_form(request.form):
+        flash("Walidacja danych rejestracji nie powiodła się")
         return redirect(url_for("sign_up"))
+    
+    username = request.form.get("login")
+    email = request.form.get("email")
+    birthday = request.form.get("date")
+    q1 = request.form.get('q1')
+    q2 = request.form.get('q2')
+    a1 = request.form.get('a1')
+    a2 = request.form.get('a2')
+    password = request.form.get("password")
+
     if is_user_in_database(username):
         flash(f"Użytkownik {username} jest już zarejestrowany")
         return redirect(url_for("sign_up"))
@@ -332,19 +283,18 @@ def sign_in_process():
         session['attempts'] = session['attempts'] + 1
     except:
         session['attempts'] = 1
-    username = request.form.get("login")
-    if not username:
-        flash("Nie podano nazwy użytkownika")
+    if not validate_login_form(request.form):
+        flash("Walidacja danych logowania się nie powiodła")
         return redirect(url_for("sign_in"))
+    username = request.form.get("login")
+    print(username, flush=True)
+    password = request.form.get("password")
+    print(password, flush=True)
     add_login_attempt(username)
     attempts = max(session['attempts'], get_login_attempts(username))
     captcha = False
     if attempts is not None:
         captcha = attempts > MAX_ATTEMPTS
-    password = request.form.get("password")
-    if not password:
-        flash("Nie podano hasła")
-        return redirect(url_for("sign_in", captcha_needed=captcha))
     if captcha:
         if not recaptcha.verify():
             flash("Zbyt wiele nieudanych prób logowania, należy wypełnić Captcha")
@@ -393,31 +343,18 @@ def password_change_process():
     if not is_user_logged_in():
         flash("Obszar niedostępny dla niezalogowanych użytkowników")
         return redirect(url_for('sign_in'))
-    oldPw = request.form.get('oldPassword')
-    if not oldPw:
-        flash("Nie podano hasła")
-        return(redirect(url_for(password_change)))
-    if not verify_user(session.get('username'), oldPw):
-        session.clear()
-        flash("Błąd autoryzacji, zaloguj się ponownie")
-        return redirect(url_for('sign_in'))
+    validation, old_pw_present = validate_pass_change_form(request.form)
+    if old_pw_present:
+        oldPw = request.form.get('oldPassword')
+        if not verify_user(session.get('username'), oldPw):
+            session.clear()
+            flash("Błąd autoryzacji, zaloguj się ponownie")
+            return redirect(url_for('sign_in'))
+    if not validation:
+        flash("Walidacja danych nie powiodła się")
+        return redirect(url_for("panel"))
     password = request.form.get("password")
-    error = False
-    if not password:
-        flash("Nie podano nowego hasła")
-        error = True
-    elif not password_validation(password):
-        flash("Nowe hasło niepoprawne")
-        error = True
     repeatPassword = request.form.get("repeatPassword")
-    if not repeatPassword:
-        flash("Nie powtórzono hasła")
-        error = True
-    if password != repeatPassword:
-        flash("Hasła się nie zgadzają")
-        error = True
-    if error:
-        return redirect(url_for("password_change"))
     success = update_password(session.get('username'), password)
     if not success:
         flash("Zmiana hasła nie udała się, spróbuj ponownie")
@@ -438,15 +375,12 @@ def forgot_pw_request():
     if is_user_logged_in():
         flash("Obszar niedostępny dla zalogowanych użytkowników")
         return redirect(url_for('panel'))
+    if not validate_pass_recovery_request_form(request.form):
+        flash("Walidacja danych nie powiodła się")
+        return redirect(url_for("sign_in"))
     username = request.form.get('login')
-    error=False
-    if not username:
-        flash("Nie podano nazwy użytkownika")
-        error = True
     birthday = request.form.get("date")
-    if not birthday:
-        flash("Nie podano daty urodzenia")
-        error = True
+    error = False
     if is_user_in_database(username):
         if not check_user_birthday(username, birthday):
             flash("Niepoprawne nazwa użytkownika i/lub data urodzenia")
@@ -477,34 +411,16 @@ def forgot_pw():
 @app.route("/forgot_pw", methods = ["POST"])
 def forgot_pw_process():
     username = session.pop('recovery', None)
+    if not validate_pass_recovery_form(request.form):
+        flash("Walidacja danych nie powiodła się")
+        return redirect(url_for("sign_in"))
     if username is None:
         flash("Wystąpił błąd")
         return redirect(url_for('sign_in'))
     a1 = request.form.get('a1')
-    error = False
-    if not a1:
-        flash("Nie podano odpowiedzi do tajnego pytania 1")
-        error = True
     a2 = request.form.get('a2')
-    if not a2:
-        flash("Nie podano odpowiedzi do tajnego pytania 2")
-        error = True
     password = request.form.get("password")
-    if not password:
-        flash("Nie podano nowego hasła")
-        error = True
-    elif not password_validation(password):
-        flash("Hasło niepoprawne")
-        error = True
-    repeatPassword = request.form.get("repeatPassword")
-    if not repeatPassword:
-        flash("Nie powtórzono nowego hasła")
-        error = True
-    if password != repeatPassword:
-        flash("Hasła się nie zgadzają")
-        error = True
-    if error:
-        return redirect(url_for("sign_in"))
+    repeatPassword = request.form.get("repeatPassword")        
     are_answers_ok = check_answers(username, a1, a2)
     if not are_answers_ok:
         flash("Wystąpił błąd")
